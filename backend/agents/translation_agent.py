@@ -72,7 +72,9 @@ class TranslationAgent:
 
         lang_name = LANGUAGE_NAMES.get(target_language, target_language)
 
-        prompt = f"""You are a professional translator specialising in Indian regional languages.
+        prompt = f"""You are not being used for a coding task — respond only in plain natural language, no code blocks or technical formatting.
+
+You are a professional translator specialising in Indian regional languages.
 Translate the following text into {lang_name}.
 
 Rules:

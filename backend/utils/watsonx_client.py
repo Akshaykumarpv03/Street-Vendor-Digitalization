@@ -39,7 +39,7 @@ _MOCK_GENERATION = (
     "[MOCK RESPONSE] This is a placeholder answer generated in mock mode. "
     "Set USE_MOCK=false and provide valid watsonx credentials for real output."
 )
-_MOCK_EMBEDDING_DIM = 1024   # matches intfloat/multilingual-e5-large
+_MOCK_EMBEDDING_DIM = 768    # matches ibm/slate-125m-english-rtrvr-v2
 _MOCK_EMBEDDING: list[float] = [0.01] * _MOCK_EMBEDDING_DIM
 
 
@@ -75,14 +75,15 @@ class WatsonxClient:
             api_key=Config.WATSONX_API_KEY,
         )
 
-        # Generation model — use chat() to avoid deprecated /text/generation endpoint
+        # Generation: ibm/granite-8b-code-instruct via chat() API
+        # (deprecated /text/generation endpoint avoided intentionally)
         self._chat_model = ModelInference(
             model_id=Config.GRANITE_MODEL_ID,
             credentials=creds,
             project_id=Config.WATSONX_PROJECT_ID,
         )
 
-        # Embedding model — Embeddings class (distinct from ModelInference)
+        # Embeddings: ibm/slate-125m-english-rtrvr-v2 (768-dim, IBM-native)
         self._emb_model = Embeddings(
             model_id=Config.EMBEDDING_MODEL_ID,
             credentials=creds,
@@ -107,8 +108,10 @@ class WatsonxClient:
         """
         Generate text for *prompt* via the chat completions API.
 
-        The prompt is sent as a single user message. System-style instructions
-        embedded in the prompt string are preserved as-is.
+        The prompt is sent as a single user message.
+        NOTE: ibm/granite-8b-code-instruct defaults to code-style output;
+        every agent's system prompt includes an explicit natural-language
+        instruction to override this behaviour.
         """
         if self._mock:
             return _MOCK_GENERATION

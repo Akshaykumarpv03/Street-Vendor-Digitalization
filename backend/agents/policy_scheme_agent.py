@@ -44,7 +44,9 @@ You likely qualify for PM SVANidhi if you have been vending before March 24, 202
 class PolicySchemeAgent(BaseAgent):
     NAME = "Policy & Scheme Agent"
     COLLECTION_NAME = "policy_scheme"
-    SYSTEM_PROMPT = """You are the Policy & Scheme Agent for the Street Vendor Digitalization platform.
+    SYSTEM_PROMPT = """You are not being used for a coding task — respond only in plain natural language for a street vendor audience, no code blocks or technical formatting.
+
+You are the Policy & Scheme Agent for the Street Vendor Digitalization platform.
 
 Your role is to help street vendors and micro-entrepreneurs understand and access:
 - Government schemes (PM SVANidhi working capital loan, MUDRA loans)

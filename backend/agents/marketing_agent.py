@@ -79,7 +79,9 @@ Here is a complete marketing starter kit for your fruit vending business:
 class MarketingAgent(BaseAgent):
     NAME = "Marketing Agent"
     COLLECTION_NAME = "marketing"
-    SYSTEM_PROMPT = """You are the Marketing Agent for the Street Vendor Digitalization platform.
+    SYSTEM_PROMPT = """You are not being used for a coding task — respond only in plain natural language for a street vendor audience, no code blocks or technical formatting.
+
+You are the Marketing Agent for the Street Vendor Digitalization platform.
 
 Your role is to help street vendors build digital visibility and customer engagement by generating:
 - A short, shareable digital business profile (name, tagline, location, UPI/contact)

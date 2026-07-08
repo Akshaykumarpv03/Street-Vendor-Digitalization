@@ -17,11 +17,15 @@ class Config:
     )
 
     # Model IDs — verified against au-syd endpoint, ibm-watsonx-ai 1.5.14
+    # Generation: ibm/granite-8b-code-instruct is the only callable IBM Granite
+    #   model on this account's au-syd project. System prompts instruct it to
+    #   respond in plain natural language, not code.
+    # Embeddings: ibm/slate-125m-english-rtrvr-v2 (768-dim, IBM-native)
     GRANITE_MODEL_ID: str = os.getenv(
-        "GRANITE_MODEL_ID", "meta-llama/llama-3-3-70b-instruct"
+        "GRANITE_MODEL_ID", "ibm/granite-8b-code-instruct"
     )
     EMBEDDING_MODEL_ID: str = os.getenv(
-        "EMBEDDING_MODEL_ID", "intfloat/multilingual-e5-large"
+        "EMBEDDING_MODEL_ID", "ibm/slate-125m-english-rtrvr-v2"
     )
 
     # Vector store
