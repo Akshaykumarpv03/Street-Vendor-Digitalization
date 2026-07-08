@@ -16,12 +16,12 @@ class Config:
         "WATSONX_URL", "https://us-south.ml.cloud.ibm.com"
     )
 
-    # Model IDs — verify these in your watsonx.ai Studio project; they change.
+    # Model IDs — verified against au-syd endpoint, ibm-watsonx-ai 1.5.14
     GRANITE_MODEL_ID: str = os.getenv(
-        "GRANITE_MODEL_ID", "ibm/granite-13b-instruct-v2"
+        "GRANITE_MODEL_ID", "meta-llama/llama-3-3-70b-instruct"
     )
     EMBEDDING_MODEL_ID: str = os.getenv(
-        "EMBEDDING_MODEL_ID", "ibm/slate-125m-english-rtrvr"
+        "EMBEDDING_MODEL_ID", "intfloat/multilingual-e5-large"
     )
 
     # Vector store
