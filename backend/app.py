@@ -1,111 +1,72 @@
 """
-app.py — Flask entry point for the Street Vendor Digitalization Agent backend.
+Flask entry point for the IBM watsonx Orchestrate proxy backend.
 """
-from flask import Flask, jsonify
+from __future__ import annotations
+
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from config import Config
-from agents.policy_scheme_agent import PolicySchemeAgent
-from agents.market_insights_agent import MarketInsightsAgent
-from agents.upi_guide_agent import UPIGuideAgent
-from agents.marketing_agent import MarketingAgent
-from agents.translation_agent import TranslationAgent
-from agents.orchestrator import Orchestrator
+from utils.orchestrate_client import OrchestrateClient, OrchestrateError
+
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# ── Instantiate agents once at startup ────────────────────────────────────────
-policy_agent = PolicySchemeAgent()
-market_agent = MarketInsightsAgent()
-upi_agent = UPIGuideAgent()
-marketing_agent = MarketingAgent()
-translation_agent = TranslationAgent()
-orchestrator = Orchestrator(
-    policy_agent=policy_agent,
-    market_agent=market_agent,
-    upi_agent=upi_agent,
-    marketing_agent=marketing_agent,
-    translation_agent=translation_agent,
-)
 
-# ── Health ─────────────────────────────────────────────────────────────────────
 @app.get("/api/health")
 def health():
     missing = Config.validate()
     return jsonify(
         {
-            "status": "ok",
-            "mock_mode": Config.USE_MOCK,
+            "status": "ok" if not missing else "misconfigured",
+            "service": "watsonx-orchestrate-proxy",
             "missing_credentials": missing,
-            "vector_db": Config.VECTOR_DB_PROVIDER,
+            "mock_mode": Config.USE_MOCK,
         }
-    )
+    ), 200 if not missing or Config.USE_MOCK else 500
 
 
-# ── Main orchestrator endpoint ─────────────────────────────────────────────────
-@app.post("/api/query")
-def query():
-    from flask import request
+@app.route("/api/chat", methods=["POST", "OPTIONS"])
+def chat():
+    # Intercept CORS preflight and approve it immediately
+    if request.method == "OPTIONS":
+        return jsonify({"status": "preflight ok"}), 200
 
     body = request.get_json(force=True, silent=True) or {}
-    message = body.get("message", "").strip()
-    language = body.get("language", "en")
+    message = str(body.get("message", "")).strip()
+    language = str(body.get("language", "en")).strip() or "en"
 
     if not message:
         return jsonify({"error": "message is required"}), 400
 
-    result = orchestrator.run(message=message, language=language)
-    return jsonify(result)
-
-
-# ── Direct per-agent endpoints (for isolated testing) ─────────────────────────
-@app.post("/api/agents/policy-scheme")
-def agent_policy():
-    from flask import request
-    body = request.get_json(force=True, silent=True) or {}
-    return jsonify(policy_agent.run(query=body.get("query", ""), context=body))
-
-
-@app.post("/api/agents/market-insights")
-def agent_market():
-    from flask import request
-    body = request.get_json(force=True, silent=True) or {}
-    return jsonify(market_agent.run(query=body.get("query", ""), context=body))
-
-
-@app.post("/api/agents/upi-guide")
-def agent_upi():
-    from flask import request
-    body = request.get_json(force=True, silent=True) or {}
-    return jsonify(upi_agent.run(query=body.get("query", ""), context=body))
-
-
-@app.post("/api/agents/marketing")
-def agent_marketing():
-    from flask import request
-    body = request.get_json(force=True, silent=True) or {}
-    return jsonify(marketing_agent.run(query=body.get("query", ""), context=body))
-
-
-@app.post("/api/agents/translate")
-def agent_translate():
-    from flask import request
-    body = request.get_json(force=True, silent=True) or {}
-    return jsonify(
-        translation_agent.run(
-            text=body.get("text", ""),
-            target_language=body.get("language", "en"),
+    if language != "en":
+        message = (
+            f"{message}\n\n"
+            f"Please respond in the user's selected language code: {language}."
         )
-    )
+
+    if Config.USE_MOCK:
+        return jsonify(
+            {
+                "message": (
+                    "## Digital Business Guidance\n\n"
+                    "This is a local mock response from the Orchestrate proxy. "
+                    "Set `USE_MOCK=false` and configure IBM Cloud credentials "
+                    "to call the live watsonx Orchestrate agent."
+                )
+            }
+        )
+
+    try:
+        client = OrchestrateClient.from_config()
+        answer = client.chat(message)
+        return jsonify({"message": answer})
+    except OrchestrateError as exc:
+        return jsonify({"error": str(exc)}), exc.status_code
+    except Exception as exc:  # pragma: no cover
+        return jsonify({"error": f"Unexpected server error: {exc}"}), 500
 
 
 if __name__ == "__main__":
-    if not Config.USE_MOCK:
-        missing = Config.validate()
-        if missing:
-            print(
-                f"[WARNING] watsonx credentials not set: {missing}. "
-                "Set USE_MOCK=true to run in demo mode without credentials."
-            )
     app.run(host="0.0.0.0", port=5000, debug=Config.DEBUG)

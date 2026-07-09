@@ -1,48 +1,63 @@
 /**
- * MarkdownBlock.jsx — lightweight markdown renderer without an external lib.
- * Handles: **bold**, *italic*, `code`, ## headings, bullet lists, numbered
- * lists, horizontal rules, and line breaks.
- * Keeps bundle size minimal — no react-markdown dependency needed.
+ * MarkdownBlock.jsx — Lightweight markdown renderer tailored for the new brand/slate theme.
+ * Handles: **bold**, *italic*, `code`, ## headings, lists, and beautiful tables.
  */
 
-function parseInline(text) {
+const THEMES = {
+  light: {
+    heading: "text-slate-900 font-bold",
+    subheading: "text-slate-800 font-semibold",
+    body: "text-slate-700",
+    rule: "border-slate-200",
+    code: "bg-brand-50 text-brand-700 font-mono font-medium rounded-[4px] px-1.5 py-0.5 text-[0.85em]",
+    tableBorder: "border-slate-200",
+    tableRow: "border-b border-slate-200 last:border-0 hover:bg-slate-50 transition-colors",
+    tableCell: "px-4 py-3 text-sm text-slate-700",
+    tableHeaderCell: "px-4 py-3 text-sm font-semibold text-slate-900 bg-slate-50 border-b border-slate-200",
+    bold: "font-bold text-slate-900",
+  }
+};
+
+function parseInline(text, theme) {
+  let html = text;
   // Bold
-  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g, `<strong class="${theme.bold}">$1</strong>`);
   // Italic
-  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
   // Inline code
-  text = text.replace(/`([^`]+)`/g, '<code class="bg-sand px-1 py-0.5 rounded text-xs font-mono text-terracotta">$1</code>');
-  return text;
+  html = html.replace(/`([^`]+)`/g, `<code class="${theme.code}">$1</code>`);
+  return html;
 }
 
-function renderLine(line, idx) {
+function renderLine(line, idx, theme, isHeaderRow = false) {
   const trimmed = line.trim();
-
   if (!trimmed) return <div key={idx} className="h-2" />;
 
-  // H2 / H3
+  // H2
   if (trimmed.startsWith("## ")) {
     return (
       <h3
         key={idx}
-        className="text-teal font-semibold text-base mt-4 mb-2"
-        dangerouslySetInnerHTML={{ __html: parseInline(trimmed.slice(3)) }}
+        className={`${theme.heading} text-lg mt-5 mb-2.5`}
+        dangerouslySetInnerHTML={{ __html: parseInline(trimmed.slice(3), theme) }}
       />
     );
   }
+  
+  // H3 / H4
   if (trimmed.startsWith("### ")) {
     return (
       <h4
         key={idx}
-        className="text-charcoal font-semibold text-sm mt-3 mb-1"
-        dangerouslySetInnerHTML={{ __html: parseInline(trimmed.slice(4)) }}
+        className={`${theme.subheading} text-base mt-4 mb-2`}
+        dangerouslySetInnerHTML={{ __html: parseInline(trimmed.slice(4), theme) }}
       />
     );
   }
 
   // Horizontal rule
   if (trimmed === "---" || trimmed === "***") {
-    return <hr key={idx} className="border-sand my-3" />;
+    return <hr key={idx} className={`${theme.rule} my-4`} />;
   }
 
   // Bullet list item
@@ -50,8 +65,8 @@ function renderLine(line, idx) {
     return (
       <li
         key={idx}
-        className="ml-4 text-sm text-charcoal list-disc leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: parseInline(trimmed.slice(2)) }}
+        className={`ml-5 pl-1 mb-1.5 text-[15px] ${theme.body} list-disc marker:text-brand-500`}
+        dangerouslySetInnerHTML={{ __html: parseInline(trimmed.slice(2), theme) }}
       />
     );
   }
@@ -62,25 +77,33 @@ function renderLine(line, idx) {
     return (
       <li
         key={idx}
-        className="ml-4 text-sm text-charcoal list-decimal leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: parseInline(numMatch[2]) }}
+        className={`ml-5 pl-1 mb-1.5 text-[15px] ${theme.body} list-decimal marker:text-brand-500 marker:font-medium`}
+        dangerouslySetInnerHTML={{ __html: parseInline(numMatch[2], theme) }}
       />
     );
   }
 
-  // Table row (basic)
+  // Table row
   if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
     if (trimmed.replace(/[\s|:-]/g, "") === "") return null; // divider row
-    const cells = trimmed.split("|").filter(Boolean);
+    
+    // Split by | but ignore escaped ones or empty outer ones
+    const rawCells = trimmed.split("|");
+    const cells = rawCells.slice(1, rawCells.length - 1); // remove outer empty splits from leading/trailing |
+    
     return (
-      <tr key={idx} className="border-b border-sand">
-        {cells.map((cell, ci) => (
-          <td
-            key={ci}
-            className="px-2 py-1 text-xs text-charcoal"
-            dangerouslySetInnerHTML={{ __html: parseInline(cell.trim()) }}
-          />
-        ))}
+      <tr key={idx} className={theme.tableRow}>
+        {cells.map((cell, ci) => {
+          const CellTag = isHeaderRow ? "th" : "td";
+          const cellClass = isHeaderRow ? theme.tableHeaderCell : theme.tableCell;
+          return (
+            <CellTag
+              key={ci}
+              className={cellClass}
+              dangerouslySetInnerHTML={{ __html: parseInline(cell.trim(), theme) }}
+            />
+          );
+        })}
       </tr>
     );
   }
@@ -89,30 +112,32 @@ function renderLine(line, idx) {
   return (
     <p
       key={idx}
-      className="text-sm text-charcoal leading-relaxed"
-      dangerouslySetInnerHTML={{ __html: parseInline(trimmed) }}
+      className={`text-[15px] ${theme.body} leading-relaxed mb-2.5 last:mb-0`}
+      dangerouslySetInnerHTML={{ __html: parseInline(trimmed, theme) }}
     />
   );
 }
 
-export default function MarkdownBlock({ content }) {
+export default function MarkdownBlock({ content, variant = "light" }) {
   if (!content) return null;
 
+  const theme = THEMES.light;
   const lines = content.split("\n");
-  const hasTable = lines.some((l) => l.trim().startsWith("|"));
 
   const elements = [];
   let inList = false;
+  let listType = "ul"; // or "ol"
   let listItems = [];
   let inTable = false;
   let tableRows = [];
 
   const flushList = () => {
     if (listItems.length) {
+      const ListTag = listType;
       elements.push(
-        <ul key={`list-${elements.length}`} className="space-y-0.5 my-2">
+        <ListTag key={`list-${elements.length}`} className="my-3">
           {listItems}
-        </ul>
+        </ListTag>
       );
       listItems = [];
       inList = false;
@@ -121,10 +146,19 @@ export default function MarkdownBlock({ content }) {
 
   const flushTable = () => {
     if (tableRows.length) {
+      // The first row should be placed in <thead>, the rest in <tbody>
+      const headRow = tableRows[0];
+      const bodyRows = tableRows.slice(1);
+      
       elements.push(
-        <div key={`table-${elements.length}`} className="overflow-x-auto my-3">
-          <table className="w-full text-xs border-collapse border border-sand rounded-lg overflow-hidden">
-            <tbody>{tableRows}</tbody>
+        <div key={`table-${elements.length}`} className="overflow-hidden overflow-x-auto my-5 rounded-xl border border-slate-200 shadow-sm">
+          <table className="w-full text-left border-collapse bg-white">
+            <thead className="bg-slate-50">
+              {headRow}
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {bodyRows}
+            </tbody>
           </table>
         </div>
       );
@@ -135,24 +169,34 @@ export default function MarkdownBlock({ content }) {
 
   lines.forEach((line, idx) => {
     const trimmed = line.trim();
-    const isListItem =
-      trimmed.startsWith("- ") ||
-      trimmed.startsWith("* ") ||
-      /^\d+\.\s/.test(trimmed);
-    const isTableRow = trimmed.startsWith("|");
+    const isBulletItem = trimmed.startsWith("- ") || trimmed.startsWith("* ");
+    const isNumItem = /^\d+\.\s/.test(trimmed);
+    const isListItem = isBulletItem || isNumItem;
+    const isTableRow = trimmed.startsWith("|") && trimmed.endsWith("|");
 
     if (isListItem) {
-      if (!inList) inList = true;
-      listItems.push(renderLine(line, `li-${idx}`));
+      flushTable();
+      if (!inList) {
+        inList = true;
+        listType = isNumItem ? "ol" : "ul";
+      }
+      listItems.push(renderLine(line, `li-${idx}`, theme));
     } else if (isTableRow) {
       flushList();
-      if (!inTable) inTable = true;
-      const row = renderLine(line, `tr-${idx}`);
-      if (row) tableRows.push(row);
+      const isDivider = trimmed.replace(/[\s|:-]/g, "") === "";
+      if (!inTable) {
+        inTable = true;
+      }
+      if (!isDivider) {
+        // If it's the very first row of the table, treat it as header row
+        const isHeader = tableRows.length === 0;
+        const rowEl = renderLine(line, `tr-${idx}`, theme, isHeader);
+        if (rowEl) tableRows.push(rowEl);
+      }
     } else {
       flushList();
       flushTable();
-      const el = renderLine(line, idx);
+      const el = renderLine(line, idx, theme);
       if (el) elements.push(el);
     }
   });
@@ -160,5 +204,5 @@ export default function MarkdownBlock({ content }) {
   flushList();
   flushTable();
 
-  return <div className="space-y-1">{elements}</div>;
+  return <div className="markdown-body">{elements}</div>;
 }

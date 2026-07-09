@@ -3,7 +3,7 @@
  * options (Google Business, ONDC, Justdial, etc.) with the AI-generated
  * local SEO guidance below.
  */
-import { ExternalLink, Globe } from "lucide-react";
+import { ExternalLink, Globe, AlertCircle } from "lucide-react";
 import MarkdownBlock from "./MarkdownBlock";
 
 const PLATFORMS = [
@@ -46,6 +46,8 @@ const PLATFORMS = [
 ];
 
 export default function ListingSuggestions({ content }) {
+  const hasError = !content || content.trim() === "" || content.includes("[Error:");
+
   return (
     <div className="space-y-4">
       {/* Platform cards */}
@@ -56,16 +58,18 @@ export default function ListingSuggestions({ content }) {
             href={p.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="card hover:border-teal hover:shadow-md transition-all group"
+            className="card hover:border-teal hover:shadow-md active:scale-[0.98] transition-all duration-200 group flex flex-col justify-between"
           >
-            <div className="text-2xl mb-2">{p.icon}</div>
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-charcoal text-sm group-hover:text-teal">
-                {p.name}
-              </span>
-              <ExternalLink size={12} className="text-slate group-hover:text-teal" />
+            <div>
+              <div className="text-2xl mb-2 group-hover:scale-110 transition-transform duration-200 inline-block">{p.icon}</div>
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-charcoal text-sm group-hover:text-teal transition-colors">
+                  {p.name}
+                </span>
+                <ExternalLink size={12} className="text-slate group-hover:text-teal transition-colors" />
+              </div>
+              <p className="text-xs text-slate mt-1.5 leading-relaxed">{p.desc}</p>
             </div>
-            <p className="text-xs text-slate mt-1">{p.desc}</p>
           </a>
         ))}
       </div>
@@ -76,7 +80,19 @@ export default function ListingSuggestions({ content }) {
           <Globe size={18} className="text-teal" />
           <h3 className="section-heading mb-0">Local SEO & Marketing Tips</h3>
         </div>
-        <MarkdownBlock content={content} />
+        {hasError ? (
+          <div className="bg-error/5 text-error rounded-xl p-4 text-sm border border-error/20 flex gap-2.5 items-start">
+            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Local SEO Guidance Unavailable</p>
+              <p className="text-xs opacity-90 mt-0.5">
+                The marketing agent was unable to load search optimization tips. You can still set up your profile on the platforms listed above.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <MarkdownBlock content={content} />
+        )}
       </div>
     </div>
   );

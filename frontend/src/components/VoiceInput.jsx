@@ -17,10 +17,10 @@ export default function VoiceInput({ onTranscript, language = "en" }) {
     return (
       <button
         disabled
-        className="p-4 rounded-full bg-sand text-slate cursor-not-allowed"
+        className="w-12 h-12 flex items-center justify-center rounded-xl bg-sand text-slate cursor-not-allowed opacity-50"
         title="Voice input not supported in this browser"
       >
-        <MicOff size={22} />
+        <MicOff size={20} />
       </button>
     );
   }
@@ -52,15 +52,20 @@ export default function VoiceInput({ onTranscript, language = "en" }) {
 
   return (
     <button
+      type="button"
       onClick={listening ? stop : start}
-      className={`p-4 rounded-full transition-all duration-200 ${
+      className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-300 active:scale-95 ${
         listening
-          ? "bg-error text-white animate-pulse"
-          : "bg-teal text-white hover:bg-teal-dark"
+          ? "bg-error text-white ring-4 ring-error/30 animate-pulse"
+          : "bg-teal text-white hover:bg-teal-dark hover:shadow shadow-sm"
       }`}
-      title={listening ? "Stop recording" : "Start voice input"}
+      title={listening ? "Listening... click to stop" : "Start voice dictation"}
     >
-      {listening ? <Square size={22} /> : <Mic size={22} />}
+      {listening ? (
+        <Square size={18} className="animate-spin duration-1000" />
+      ) : (
+        <Mic size={20} className="hover:scale-110 transition-transform duration-200" />
+      )}
     </button>
   );
 }

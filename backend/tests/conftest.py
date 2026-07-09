@@ -1,14 +1,11 @@
-"""
-tests/conftest.py — shared pytest fixtures for the Street Vendor Agent test suite.
-
-Sets USE_MOCK=true before importing anything so no watsonx credentials are
-needed and the test suite runs in CI without any external services.
-"""
+"""Shared pytest fixtures for the Orchestrate proxy backend."""
 import os
 
-# Force mock mode before any app modules are imported
 os.environ["USE_MOCK"] = "true"
 os.environ["FLASK_ENV"] = "testing"
+os.environ["IBM_CLOUD_API_KEY"] = "test-api-key"
+os.environ["ORCHESTRATE_INSTANCE_URL"] = "https://example.com/instances/test"
+os.environ["ORCHESTRATE_AGENT_ID"] = "test-agent-id"
 
 import pytest  # noqa: E402
 from app import app as flask_app  # noqa: E402
